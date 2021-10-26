@@ -4,10 +4,12 @@ const presence = new Presence({
   browsingStamp = Math.floor(Date.now() / 1000);
 
 presence.on("UpdateData", async function () {
-  const set_timeElapsed = await presence.getSetting("timeElapsed"),
-    set_showButtons = await presence.getSetting("showButtons"),
-    set_logo = await presence.getSetting("logo"),
-    set_showCheckout = await presence.getSetting("showCheckout"),
+    const setting = {
+      timeElapsed: await presence.getSetting("timeElapsed"),
+      showButtons: await presence.getSetting("showButtons"),
+      logo: await presence.getSetting("logo"),
+      showCheckout: await presence.getSetting("showCheckout")
+    },
     logoArr = ["logo_red", "logo_red_text", "logo_white", "logo_white_text"],
     urlpath = window.location.pathname.split("/"),
     langs = [
@@ -52,10 +54,10 @@ presence.on("UpdateData", async function () {
     ],
     urlpNum = new RegExp(langs.join("|")).test(urlpath[1]) ? 2 : 1,
     presenceData: PresenceData = {
-      largeImageKey: logoArr[set_logo] || "logo_red"
+      largeImageKey: logoArr[setting.logo] || "logo_red"
     };
 
-  if (set_timeElapsed) presenceData.startTimestamp = browsingStamp;
+  if (setting.timeElapsed) presenceData.startTimestamp = browsingStamp;
 
   if (window.location.hostname === "www.tesla.com") {
     if (!urlpath[urlpNum]) presenceData.details = "Home";
@@ -68,7 +70,7 @@ presence.on("UpdateData", async function () {
         ).textContent;
         presenceData.details = `Designing ${model}`;
 
-        if (set_showButtons) {
+        if (setting.showButtons) {
           presenceData.buttons = [
             {
               label: `View ${model}`,
@@ -88,7 +90,7 @@ presence.on("UpdateData", async function () {
         ).textContent;
         presenceData.details = `Viewing ${model}`;
 
-        if (set_showButtons) {
+        if (setting.showButtons) {
           presenceData.buttons = [
             {
               label: `View ${model}`,
@@ -105,7 +107,7 @@ presence.on("UpdateData", async function () {
       if (urlpath[num] === "design") {
         presenceData.state = "Designing";
 
-        if (set_showButtons) {
+        if (setting.showButtons) {
           presenceData.buttons = [
             {
               label: "View Cybertruck",
@@ -120,7 +122,7 @@ presence.on("UpdateData", async function () {
       } else {
         presenceData.details = "Viewing Cybertruck";
 
-        if (set_showButtons) {
+        if (setting.showButtons) {
           presenceData.buttons = [
             {
               label: "View Cybertruck",
@@ -143,10 +145,10 @@ presence.on("UpdateData", async function () {
 
       if (urlpath[num] === "design") presenceData.state = "Designing";
 
-      if (set_showButtons) {
+      if (setting.showButtons) {
         presenceData.buttons = [
           {
-            label: `View Solar Roof`,
+            label: "View Solar Roof",
             url: window.location.href
           }
         ];
@@ -154,10 +156,10 @@ presence.on("UpdateData", async function () {
     } else if (urlpath[urlpNum] === "solarpanels") {
       presenceData.details = "Solar Panels";
 
-      if (set_showButtons) {
+      if (setting.showButtons) {
         presenceData.buttons = [
           {
-            label: `View Solar Panels`,
+            label: "View Solar Panels",
             url: window.location.href
           }
         ];
@@ -168,10 +170,10 @@ presence.on("UpdateData", async function () {
 
       if (urlpath[num] === "design") presenceData.state = "Designing";
 
-      if (set_showButtons) {
+      if (setting.showButtons) {
         presenceData.buttons = [
           {
-            label: `View Page`,
+            label: "View Page",
             url: window.location.href
           }
         ];
@@ -179,10 +181,10 @@ presence.on("UpdateData", async function () {
     } else if (urlpath[urlpNum] === "powerwall") {
       presenceData.details = "Powerwall";
 
-      if (set_showButtons) {
+      if (setting.showButtons) {
         presenceData.buttons = [
           {
-            label: `View Powerwall`,
+            label: "View Powerwall",
             url: window.location.href
           }
         ];
@@ -190,10 +192,10 @@ presence.on("UpdateData", async function () {
     } else if (urlpath[urlpNum] === "inventory") {
       presenceData.details = "Inventory";
 
-      if (set_showButtons) {
+      if (setting.showButtons) {
         presenceData.buttons = [
           {
-            label: `View Inventory`,
+            label: "View Inventory",
             url: window.location.href
           }
         ];
@@ -220,7 +222,7 @@ presence.on("UpdateData", async function () {
     if (urlpath[urlpNum] === "category" && urlpath[num]) {
       presenceData.state = document.title.replace("Tesla | ", "");
 
-      if (set_showButtons) {
+      if (setting.showButtons) {
         presenceData.buttons = [
           {
             label: "View Category",
@@ -233,7 +235,7 @@ presence.on("UpdateData", async function () {
         "h2.product-title.tds-text--h1-alt"
       ).textContent;
 
-      if (set_showButtons) {
+      if (setting.showButtons) {
         presenceData.buttons = [
           {
             label: "View Product",
@@ -245,7 +247,7 @@ presence.on("UpdateData", async function () {
       urlpath[urlpNum] === "checkout" &&
       urlpath[num] === "billing-shipping-info"
     ) {
-      const costs = set_showCheckout
+      const costs = setting.showCheckout
         ? ` (${
             document.querySelector(
               "span.ordersummary__container__order__details__line__total>span.inline-value"
@@ -258,10 +260,9 @@ presence.on("UpdateData", async function () {
       presenceData.state = "Order History";
   }
 
-  if (presenceData.details == null) {
+  if (!presenceData.details) {
     presence.setTrayTitle();
     presence.setActivity();
-  } else {
+  } else
     presence.setActivity(presenceData);
-  }
 });
