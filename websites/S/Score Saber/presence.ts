@@ -1,15 +1,16 @@
 const presence = new Presence({
     clientId: "833644176967991346"
   }),
-  browsingStamp = Math.floor(Date.now() / 1000);
+  browsingTimestamp = Math.floor(Date.now() / 1000);
 
 presence.on("UpdateData", async () => {
-  const time = await presence.getSetting("time"),
-    privacy = await presence.getSetting("privacy"),
-    buttons = await presence.getSetting("buttons"),
+  const time = await presence.getSetting<boolean>("time"),
+    privacy = await presence.getSetting<boolean>("privacy"),
+    buttons = await presence.getSetting<boolean>("buttons"),
+    cover = await presence.getSetting<boolean>("cover"),
     presenceData: PresenceData = {
       largeImageKey: "logo",
-      startTimestamp: browsingStamp
+      startTimestamp: browsingTimestamp
     };
   if (document.querySelector("[class*='is-visible']")) {
     presenceData.details = "Searching";
@@ -41,17 +42,13 @@ presence.on("UpdateData", async () => {
     if (document.location.pathname.includes("/leaderboards")) {
       presenceData.details = "Browsing Leaderboards";
       if (
-        (
-          document.querySelector(
-            "[class^='ss-input'] > div > input"
-          ) as HTMLInputElement
+        document.querySelector<HTMLInputElement>(
+          "[class^='ss-input'] > div > input"
         ).value !== ""
       ) {
         presenceData.state = `Search: ${
-          (
-            document.querySelector(
-              "[class^='ss-input'] > div > input"
-            ) as HTMLInputElement
+          document.querySelector<HTMLInputElement>(
+            "[class^='ss-input'] > div > input"
           ).value
         }`;
       }
@@ -73,6 +70,11 @@ presence.on("UpdateData", async () => {
           url: document.location.href
         }
       ];
+      if (cover) {
+        presenceData.largeImageKey = document.querySelector<HTMLImageElement>(
+          "[class^='map-cover']"
+        ).src;
+      }
     } else presenceData.details = "Viewing Leaderboard";
   } else if (document.location.pathname.includes("/ranking/requests")) {
     presenceData.details = "Browsing Rank Requests";
@@ -111,7 +113,7 @@ presence.on("UpdateData", async () => {
       )
     ) {
       presenceData.state = `${
-        (document.querySelector("[class^='country']") as HTMLImageElement).alt
+        document.querySelector<HTMLImageElement>("[class^='country']").alt
       } ${
         document.querySelector(
           "[class^='title is-5 player has-text-centered-mobile'] > a > span"
@@ -119,7 +121,7 @@ presence.on("UpdateData", async () => {
       } (${document.querySelector("[class^='title-header pp']").textContent})`;
     } else {
       presenceData.state = `${
-        (document.querySelector("[class^='country']") as HTMLImageElement).alt
+        document.querySelector<HTMLImageElement>("[class^='country']").alt
       } ${
         document.querySelector(
           "[class^='title is-5 player has-text-centered-mobile'] > span"
