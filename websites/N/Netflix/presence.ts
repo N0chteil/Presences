@@ -161,15 +161,16 @@ presence.on("UpdateData", async () => {
       presence.getSetting<number>("logo"),
       presence.getSetting<boolean>("cover")
     ]),
-    largeImage = ["https://i.imgur.com/Wf8G0mk.gif", "nflix_lg", "noback"][logo] ||
-    "nflix_lg";
+    largeImage =
+      ["https://i.imgur.com/Wf8G0mk.gif", "nflix_lg", "noback"][logo] ||
+      "nflix_lg";
 
   let presenceData: PresenceData = {
-    largeImageKey: largeImage
-  },
-  [videoMetadata] = Object.values(latestData?.videoMetadata || {});
-
+      largeImageKey: largeImage
+    },
+    [videoMetadata] = Object.values(latestData?.videoMetadata || {});
   //* Reset browsingTimestamp if href has changed.
+
   if (document.location.href !== prevUrl) {
     prevUrl = document.location.href;
     browsingTimestamp = Math.floor(Date.now() / 1000);
@@ -182,16 +183,39 @@ presence.on("UpdateData", async () => {
   }
 
   if (!videoMetadata && window.location.pathname.includes("/watch/")) {
-    const episodeId = parseInt((document.querySelector("[class$='title'] .ellipsize-text span") ?? document.querySelector("[data-uia$='video-title'] span"))?.textContent.split(":")[1].trim().replace(/\D+/g, "")),
-      seasonId = parseInt((document.querySelector("[class$='title'] .ellipsize-text span") ?? document.querySelector("[data-uia$='video-title'] span"))?.textContent.split(":")[0].trim().replace(/\D+/g, "")),
-      watchId = parseInt(document.URL.split("?")[0].replace(/\D+/g, "")),
-      type = (document.querySelector("[class$='title'] .ellipsize-text span") || document.querySelector("[data-uia$='video-title'] span")) ? "show" : "movie";
+    const episodeId = parseInt(
+        (
+          document.querySelector("[class$='title'] .ellipsize-text span") ??
+          document.querySelector("[data-uia$='video-title'] span")
+        )?.textContent
+          .split(":")[1]
+          .trim()
+          .replace(/\D+/g, ""),
+        0
+      ),
+      seasonId = parseInt(
+        (
+          document.querySelector("[class$='title'] .ellipsize-text span") ??
+          document.querySelector("[data-uia$='video-title'] span")
+        )?.textContent
+          .split(":")[0]
+          .trim()
+          .replace(/\D+/g, ""),
+        0
+      ),
+      watchId = parseInt(document.URL.split("?")[0].replace(/\D+/g, ""), 0);
+
+    if (!episodeId || !seasonId || !watchId) return;
 
     videoMetadata = {
-      type: type,
+      type:
+        document.querySelector("[class$='title'] .ellipsize-text span") ||
+        document.querySelector("[data-uia$='video-title'] span")
+          ? "show"
+          : "movie",
       currentEpisode: watchId,
       id: watchId,
-      boxart: undefined,
+      boxart: null,
       seasons: [
         {
           seq: seasonId,
@@ -199,12 +223,28 @@ presence.on("UpdateData", async () => {
             {
               episodeId: watchId,
               seq: episodeId,
-              title: (document.querySelector("[class$='title'] .ellipsize-text span:nth-child(3)") ?? document.querySelector("[data-uia$='video-title'] span:nth-child(3)"))?.textContent
+              title: (
+                document.querySelector(
+                  "[class$='title'] .ellipsize-text span:nth-child(3)"
+                ) ??
+                document.querySelector(
+                  "[data-uia$='video-title'] span:nth-child(3)"
+                )
+              )?.textContent
             }
           ]
         }
       ],
-      title: type === "movie" ? (document.querySelector("[class$='title'] h4.ellipsize-text") ?? document.querySelector("[data-uia$='video-title']"))?.textContent : (document.querySelector("[class$='title'] .ellipsize-text h4") ?? document.querySelector("[data-uia$='video-title'] h4"))?.textContent
+      title:
+        this.type === "movie"
+          ? (
+              document.querySelector("[class$='title'] h4.ellipsize-text") ??
+              document.querySelector("[data-uia$='video-title']")
+            )?.textContent
+          : (
+              document.querySelector("[class$='title'] .ellipsize-text h4") ??
+              document.querySelector("[data-uia$='video-title'] h4")
+            )?.textContent
     };
   }
 
@@ -217,7 +257,11 @@ presence.on("UpdateData", async () => {
     //* User is currently playing a video
     const { paused } = videoElement;
 
-    if (cover) presenceData.largeImageKey = videoMetadata.boxart || largeImage;
+    if (cover) {
+      presenceData.largeImageKey = videoMetadata.boxart
+        ? await getShortURL(videoMetadata.boxart)
+        : largeImage;
+    }
 
     [, presenceData.endTimestamp] =
       presence.getTimestampsfromMedia(videoElement);
@@ -347,14 +391,18 @@ presence.on("UpdateData", async () => {
       details: strings.viewList
     },
     "/title/(\\d*)/": {
-      ...(() => {
+      ...(await (async () => {
         const model = latestData?.discoveryModels[document.URL.split("/")[4]],
           isSeries = model?.type === "show";
         if (!model) return {};
         return {
           details: isSeries ? strings.viewingSeries : strings.viewingMovie,
           state: model.title,
-          largeImageKey: cover ? model.imageHighRes : null,
+          largeImageKey: cover
+            ? model.imageHighRes
+              ? await getShortURL(model.imageHighRes)
+              : largeImage
+            : largeImage,
           buttons: [
             {
               label: isSeries ? strings.viewSeries : strings.viewMovies,
@@ -362,7 +410,7 @@ presence.on("UpdateData", async () => {
             }
           ]
         };
-      })()
+      })())
     },
     "/latest/": {
       details: strings.latest.includes("{0}")
@@ -377,7 +425,7 @@ presence.on("UpdateData", async () => {
       smallImageKey: "search"
     },
     "jbv/(\\d*)/": {
-      ...(() => {
+      ...(await (async () => {
         const model =
             latestData?.discoveryModels[
               document.URL.split("&")[0].split("jbv=")[1]
@@ -389,7 +437,11 @@ presence.on("UpdateData", async () => {
         return {
           details: isSeries ? strings.viewingSeries : strings.viewingMovie,
           state: model.title,
-          largeImageKey: cover ? model.imageHighRes : null,
+          largeImageKey: cover
+            ? model.imageHighRes
+              ? await getShortURL(model.imageHighRes)
+              : largeImage
+            : largeImage,
           buttons: [
             {
               label: isSeries ? strings.viewSeries : strings.viewMovies,
@@ -397,7 +449,7 @@ presence.on("UpdateData", async () => {
             }
           ]
         };
-      })()
+      })())
     },
     "/referfriends/": {
       details: strings.refer.includes("{0}")
@@ -446,3 +498,19 @@ presence.on("UpdateData", async () => {
   else if (!showBrowsing) presence.setActivity();
   else presence.setActivity(presenceData);
 });
+
+const shortenedURLs: Record<string, string> = {};
+async function getShortURL(url: string) {
+  if (!url || url.length < 256) return url;
+  if (shortenedURLs[url]) return shortenedURLs[url];
+  try {
+    const pdURL = await (
+      await fetch(`https://pd.premid.app/create/${url}`)
+    ).text();
+    shortenedURLs[url] = pdURL;
+    return pdURL;
+  } catch (err) {
+    presence.error(err);
+    return url;
+  }
+}
