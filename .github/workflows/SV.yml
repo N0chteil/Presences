@@ -1,5 +1,5 @@
 name: Schema Validation Check
-on: [push, pull_request]
+on: pull_request
 jobs:
   validate:
     name: Schema Validation Check
@@ -10,7 +10,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Use Node.js 16
-        uses: actions/setup-node@v3.3.0
+        uses: actions/setup-node@v3.4.1
         with:
           node-version: 16
           cache: "yarn"
