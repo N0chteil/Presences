@@ -63,8 +63,10 @@ presence.on("UpdateData", async () => {
 		else {
 			presenceData.details = `Watching a ${isLive ? "live" : "video"} on:`;
 			presenceData.state = `${
-				document.querySelector("span.nc684nl6 > span")?.textContent ||
-				document.querySelector("span.nc684nl6 > a > strong > span")?.textContent
+				document.querySelector("span.nc684nl6 > span")?.textContent ??
+				document.querySelector("span.nc684nl6 > a > strong > span")
+					?.textContent ??
+				document.querySelector('[href*="?__tn__=-UC*F"]')?.textContent
 			}'s profile`;
 
 			if (isLive) {
@@ -89,14 +91,16 @@ presence.on("UpdateData", async () => {
 				},
 			];
 		}
-	} else if (document.location.pathname.includes("/photo/")) {
+	} else if (document.location.pathname.includes("/photo")) {
 		if (privacyMode) presenceData.details = "Viewing a photo";
 		else {
 			presenceData.details = "Viewing a photo on:";
 			presenceData.state = `${
-				document.querySelector("span.nc684nl6 > span")?.textContent ||
-				document.querySelector("span.nc684nl6 > a > strong > span")?.textContent
-			}'s profile'`;
+				document.querySelector("span.nc684nl6 > span")?.textContent ??
+				document.querySelector("span.nc684nl6 > a > strong > span")
+					?.textContent ??
+				document.querySelector('[href*="?__tn__=-UC*F"]')?.textContent
+			}'s profile`;
 
 			presenceData.buttons = [
 				{
@@ -177,12 +181,21 @@ presence.on("UpdateData", async () => {
 			presenceData.details = "Watch - Viewing a user's page";
 		else {
 			presenceData.details = "Watch";
-			presenceData.state = `Viewing ${
-				document.querySelector('span > a[role="link"] > span').textContent
-			}'s page`;
+			const queryUserName =
+				document.querySelector("h2 > span.d2edcug0.hzawbc8m > span") ??
+				document.querySelector('span > a[role="link"] > span');
+			presenceData.state = `Viewing ${queryUserName.textContent.trim()}'s page`;
 			presenceData.buttons = [
 				{ label: "View User", url: document.location.href },
 			];
+		}
+	} else if (document.location.pathname.includes("/reel")) {
+		presenceData.details = "Watching a reel";
+		presenceData.largeImageKey = "https://i.imgur.com/x2Mx3si.png";
+		if (!privacyMode) {
+			presenceData.state = `From ${document
+				.querySelector<HTMLLinkElement>("h2 > span > span > a.oajrlxb2")
+				.textContent.trim()}`;
 		}
 	} else if (document.location.pathname.includes("/marketplace/")) {
 		presenceData.startTimestamp = browsingTimestamp;
@@ -235,6 +248,7 @@ presence.on("UpdateData", async () => {
 			}
 		}
 	} else if (
+		document.location.href.includes("/profile.php?id=") ||
 		document.querySelector('[aria-label="Link to open profile cover photo"]') ||
 		document.querySelector('[style*="padding-top: 37"]') ||
 		document.querySelector('[style*="padding-top:37"]')
